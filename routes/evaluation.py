@@ -12,22 +12,22 @@ def forward_evaluation():
             return jsonify({"error": "Missing required fields"}), 400
 
         # ✅ 파일 및 폼 데이터 준비
-        audio_file = request.files['audio']
-        sentence_id = request.form['sentenceId']
-        user_id = request.form.get('userId', 'anonymous')
+        audio = request.files['audio']
+        sentenceId = request.form['sentenceId']
+        userId = request.form.get('userId', 'test-user')
 
         print("🎯 프록시에서 Colab으로 전송:")
-        print("  🔊 audio filename:", audio_file.filename)
-        print("  📄 sentenceId:", sentence_id)
-        print("  👤 userId:", user_id)
+        print("  🔊 audio filename:", audio.filename)
+        print("  📄 sentenceId:", sentenceId)
+        print("  👤 userId:", userId)
 
         # ✅ requests용 데이터 구성
         files = {
-            'audio': (audio_file.filename, audio_file.stream, audio_file.mimetype)
+            'audio': (audio.filename, audio.read(), audio.mimetype)
         }
         data = {
-            'sentenceId': sentence_id,
-            'userId': user_id
+            'sentenceId': sentenceId,
+            'userId': userId
         }
 
         # ✅ Colab 서버로 요청 전송
