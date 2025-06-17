@@ -35,7 +35,7 @@ def forward_evaluation():
             response = requests.post(EVAL_SERVER_URL, files=files, data=data, verify=False)
             os.unlink(tmp.name)  # 파일 삭제
 
-        return jsonify(response.json()), response.status_code
+        return jsonify(response.json())
 
     except Exception as e:
         import traceback
