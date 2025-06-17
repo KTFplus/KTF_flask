@@ -5,7 +5,7 @@ from routes.evaluation import eval_bp
 import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 # 라우트 등록
 app.register_blueprint(audio_bp)
