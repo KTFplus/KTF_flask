@@ -11,16 +11,6 @@ eval_bp = Blueprint('evaluation', __name__)
 @eval_bp.route("/pronunciation-evaluate", methods=["POST"])
 def evaluate_pronunciation():
     try:
-        print("📟 request.form:", request.form)
-        print("📂 request.files:", request.files)
-
-        audio_file = request.files.get("audio")
-        sentenceId = request.form.get("sentenceId")
-        userId = request.form.get("userId", "test-users")
-
-        print("✅ sentenceId:", sentenceId)
-        print("✅ audio_file:", audio_file)
-
         if not audio_file or not sentenceId:
             return jsonify({
                 "error": "MISSING_FIELDS",
@@ -29,8 +19,26 @@ def evaluate_pronunciation():
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             audio_file.save(tmp.name)
-            files = {"audio": open(tmp.name, "rb")}
-            data = {"sentenceId": sentenceId, "userId": userId}
+            
+            files = [
+                ('audio', (os.path.basename(tmp.name), open(tmp.name, 'rb'), 'audio/wav'))
+            ]
+            data = [
+                ('sentenceId', sentenceId),
+                ('userId', userId)
+            ]
+
+            
+            print("📟 request.form:", request.form)
+            print("📂 request.files:", request.files)
+    
+            audio_file = request.files.get("audio")
+            sentenceId = request.form.get("sentenceId")
+            userId = request.form.get("userId", "test-users")
+    
+            print("✅ sentenceId:", sentenceId)
+            print("✅ audio_file:", audio_file)
+            
             print("Sending to EVAL_SERVER_URL:", EVAL_SERVER_URL)
             print("POST data:", data)
             response = requests.post(EVAL_SERVER_URL, files=files, data=data)
