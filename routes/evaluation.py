@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 import requests
+import tempfile
+import os
 
 eval_bp = Blueprint("eval", __name__)
 EVAL_SERVER_URL = "https://wise-positively-octopus.ngrok-free.app/api/analyze-audio"  # Colab
@@ -7,35 +9,35 @@ EVAL_SERVER_URL = "https://wise-positively-octopus.ngrok-free.app/api/analyze-au
 @eval_bp.route("/pronunciation-evaluate", methods=["POST"])
 def forward_evaluation():
     try:
-        # ✅ 필수 필드 검증
-        if 'audio' not in request.files or 'sentenceId' not in request.form:
-            return jsonify({"error": "Missing required fields"}), 400
+        audio = request.files.get("audio")
+        sentence_id = request.form.get("sentenceId")
+        user_id = request.form.get("userId", "test-user")
 
-        # ✅ 파일 및 폼 데이터 준비
-        audio = request.files['audio']
-        sentenceId = request.form['sentenceId']
-        userId = request.form.get('userId', 'test-user')
+        # ✅ 필수 필드 확인
+        if not audio or not sentence_id:
+            return jsonify({"error": "Missing required fields"}), 400
 
         print("🎯 프록시에서 Colab으로 전송:")
         print("  🔊 audio filename:", audio.filename)
-        print("  📄 sentenceId:", sentenceId)
-        print("  👤 userId:", userId)
+        print("  📄 sentenceId:", sentence_id)
+        print("  👤 userId:", user_id)
 
-        # ✅ requests용 데이터 구성
-        files = {
-            'audio': (audio.filename, audio.read(), audio.mimetype)
-        }
-        data = {
-            'sentenceId': sentenceId,
-            'userId': userId
-        }
+        # ✅ 오디오 파일을 임시 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            audio.save(tmp.name)
+            files = {"audio": open(tmp.name, "rb")}
+            data = {
+                "sentenceId": sentence_id,
+                "userId": user_id
+            }
 
-        # ✅ Colab 서버로 요청 전송
-        response = requests.post(EVAL_SERVER_URL, files=files, data=data)
+            # ✅ Colab으로 요청 전송
+            response = requests.post(EVAL_SERVER_URL, files=files, data=data, verify=False)
+            os.unlink(tmp.name)  # 파일 삭제
 
-        # ✅ Colab 응답 그대로 반환
-        return (response.content, response.status_code, response.headers.items())
+        return jsonify(response.json()), response.status_code
 
     except Exception as e:
-        print("🔥 프록시 오류:", str(e))
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
