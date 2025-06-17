@@ -1,64 +1,41 @@
 from flask import Blueprint, request, jsonify
-from werkzeug.utils import secure_filename
-import requests, tempfile, os
+import requests
 
-EVAL_SERVER_URL = "https://wise-positively-octopus.ngrok-free.app/api/analyze-audio"
-
-eval_bp = Blueprint('evaluation', __name__)
+eval_bp = Blueprint("eval", __name__)
+EVAL_SERVER_URL = "https://wise-positively-octopus.ngrok-free.app/api/analyze-audio"  # Colab
 
 @eval_bp.route("/pronunciation-evaluate", methods=["POST"])
-def evaluate_pronunciation():
+def forward_evaluation():
     try:
-        print("📟 request.form:", request.form)
-        print("📂 request.files:", request.files)
+        # ✅ 필수 필드 검증
+        if 'audio' not in request.files or 'sentenceId' not in request.form:
+            return jsonify({"error": "Missing required fields"}), 400
 
-        audio_file = request.files.get("audio")
-        sentenceId = request.form.get("sentenceId")
-        userId = request.form.get("userId", "test-users")
+        # ✅ 파일 및 폼 데이터 준비
+        audio_file = request.files['audio']
+        sentence_id = request.form['sentenceId']
+        user_id = request.form.get('userId', 'anonymous')
 
-        print("✅ sentenceId:", sentenceId)
-        print("✅ audio_file:", audio_file)
+        print("🎯 프록시에서 Colab으로 전송:")
+        print("  🔊 audio filename:", audio_file.filename)
+        print("  📄 sentenceId:", sentence_id)
+        print("  👤 userId:", user_id)
 
-        if not audio_file or not sentenceId:
-            return jsonify({
-                "error": "MISSING_FIELDS",
-                "message": "필수 필드(audio, sentenceId)가 누락되었습니다."
-            }), 400
+        # ✅ requests용 데이터 구성
+        files = {
+            'audio': (audio_file.filename, audio_file.stream, audio_file.mimetype)
+        }
+        data = {
+            'sentenceId': sentence_id,
+            'userId': user_id
+        }
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-            audio_file.save(tmp.name)
+        # ✅ Colab 서버로 요청 전송
+        response = requests.post(EVAL_SERVER_URL, files=files, data=data)
 
-            files = [
-                ('audio', (os.path.basename(tmp.name), open(tmp.name, 'rb'), 'audio/wav'))
-            ]
-            data = [
-                ('sentenceId', sentenceId),
-                ('userId', userId)
-            ]
-
-            print("📤 Sending to EVAL_SERVER_URL:", EVAL_SERVER_URL)
-            print("📨 POST data:", data)
-
-            response = requests.post(EVAL_SERVER_URL, files=files, data=data)
-            os.unlink(tmp.name)
-
-        print("✅ Received status code:", response.status_code)
-        print("📩 Received content:", response.text)
-
-        if response.status_code != 200:
-            return jsonify({
-                "error": "DOWNSTREAM_ERROR",
-                "message": "발음 평가 서버에서 200이 아닙니다.",
-                "status_code": response.status_code,
-                "response": response.text
-            }), response.status_code
-
-        return jsonify(response.json())
+        # ✅ Colab 응답 그대로 반환
+        return (response.content, response.status_code, response.headers.items())
 
     except Exception as e:
-        print("❌ Exception:", str(e))
-        return jsonify({
-            "error": "EVAL_FAILED",
-            "message": "발음 평가에 실패했습니다.",
-            "exception": str(e)
-        }), 500
+        print("🔥 프록시 오류:", str(e))
+        return jsonify({"error": str(e)}), 500
