@@ -16,17 +16,17 @@ def evaluate_pronunciation():
         sentence_id = request.form.get("sentenceId")
         user_id = request.form.get("userId", "test-users")
 
-        print("✅ sentenceId:", sentence_id)
+        print("✅ sentenceId:", sentenceId)
         print("✅ audio_file:", audio_file)
 
-        if not audio_file or not sentence_id:
+        if not audio_file or not sentenceId:
             print("❌ MISSING FIELDS — audio or sentenceId")
             return error_response("MISSING_FIELDS", "필수 필드(audio, sentenceId)가 누락되었습니다."), 400
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             audio_file.save(tmp.name)
             files = {"audio": open(tmp.name, "rb")}
-            data = {"sentenceId": sentence_id, "userId": user_id}
+            data = {"sentenceId": sentenceId, "userId": userId}
             response = requests.post(EVAL_SERVER_URL, files=files, data=data)
             os.unlink(tmp.name)
 
