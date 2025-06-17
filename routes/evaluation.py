@@ -6,7 +6,7 @@ from config import EVAL_SERVER_URL
 
 eval_bp = Blueprint('evaluation', __name__)
 
-@eval_bp.route("/api/pronunciation-evaluate", methods=["POST"])
+@eval_bp.route("/pronunciation-evaluate", methods=["POST"])
 def evaluate_pronunciation():
     try:
         audio_file = request.files.get("audio")

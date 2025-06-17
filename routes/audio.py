@@ -6,7 +6,7 @@ from config import ASR_SERVER_URL
 
 audio_bp = Blueprint('audio', __name__)
 
-@audio_bp.route("/api/upload-audio", methods=["POST"])
+@audio_bp.route("/upload-audio", methods=["POST"])
 def upload_audio():
     try:
         audio_file = request.files.get("audio")
