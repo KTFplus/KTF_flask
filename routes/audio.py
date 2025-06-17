@@ -19,10 +19,12 @@ def upload_audio():
             audio_file.save(tmp.name)
             files = {"audio": open(tmp.name, "rb")}
             data = {"userId": user_id}
-            response = requests.post(ASR_SERVER_URL, files=files, data=data)
+            response = requests.post(ASR_SERVER_URL, files=files, data=data, verify=False)
             os.unlink(tmp.name)  # 처리 후 파일 삭제
 
         return jsonify(response.json())
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return error_response("ASR_FAILED", "음성 인식에 실패했습니다.", {"exception": str(e)}), 500
