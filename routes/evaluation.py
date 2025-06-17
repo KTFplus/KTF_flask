@@ -13,8 +13,8 @@ def evaluate_pronunciation():
         print("🗂 request.files:", request.files)
 
         audio_file = request.files.get("audio")
-        sentence_id = request.form.get("sentenceId")
-        user_id = request.form.get("userId", "test-users")
+        sentenceId = request.form.get("sentenceId")
+        userId = request.form.get("userId", "test-users")
 
         print("✅ sentenceId:", sentenceId)
         print("✅ audio_file:", audio_file)
